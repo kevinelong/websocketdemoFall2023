@@ -14,7 +14,7 @@
     };
         
     async function connectToServer() {    
-        const ws = new WebSocket('ws://localhost:8080/ws');
+        const ws = new WebSocket('ws://class.clvrclvr.com:8080/ws');
         return new Promise((resolve, reject) => {
             const timer = setInterval(() => {
                 if(ws.readyState === 1) {
