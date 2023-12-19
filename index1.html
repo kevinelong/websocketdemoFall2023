@@ -1,0 +1,119 @@
+<body style="margin:0;padding:0;background-color: black;color:white;">
+    <canvas id="cvs" width="512" height="512" style="background-color: white;"></canvas>
+    <input id="newUser" placeholder="enter new user name">
+    <button id="add">ADD</button>
+    <select id="userList">
+        <option value="">Select a User</option>
+    </select>
+    <input type="color" id="colorInput">
+    <button id="saveButton">SAVE</button>
+    <!-- <input id="username" value="Kevin">
+    <input id="colorInput" type="color" value="purple">
+    <div id="output">0</div> -->
+</body>
+<script>
+    let lastX = undefined;
+    let lastY = undefined;
+    let history = { lines: [], color: "#000000" };
+
+    //REDRAW
+    function redraw() {
+        if (localStorage.getItem("history") !== null) {
+            history = JSON.parse(localStorage.history);
+            if (!history.hasOwnProperty("lines")) {
+                history.lines = [];
+            }
+            history.lines.forEach(e => {
+                //DRAW A LINE
+                const ctx = cvs.getContext("2d");
+                ctx.beginPath(); // Start a new path
+                ctx.strokeStyle = e.color ? e.color : "red";
+                ctx.moveTo(e.x0, e.y0); // Move the pen
+                ctx.lineTo(e.x, e.y); // Draw a line 
+                ctx.stroke(); // Render the path
+            })
+        }
+    }
+    redraw();
+    cvs.addEventListener("mousemove", e => {
+        if (lastX != undefined && lastY != undefined && e.buttons > 0) {
+            const color = colorInput.value;
+            if (!history.hasOwnProperty("lines")) {
+                history.lines = [];
+            }
+            history.lines.push({
+                x: e.clientX,
+                y: e.clientY,
+                x0: lastX,
+                y0: lastY,
+                who: userList.selectedOptions[0].innerHTML,
+                color: color
+            });
+            localStorage.history = JSON.stringify(history);
+            //DRAW A LINE
+            const ctx = cvs.getContext("2d");
+            ctx.beginPath(); // Start a new path
+            ctx.moveTo(lastX, lastY); // Move the pen
+            ctx.strokeStyle = color;
+            ctx.lineTo(e.clientX, e.clientY); // Draw a line 
+            ctx.stroke(); // Render the path
+        }
+        lastX = e.clientX;
+        lastY = e.clientY;
+
+    });
+
+    ////////////////////////////////////////////
+    ////////////////////////////////////////////
+    ////////////////////////////////////////////
+    const host = "http://35.165.18.146:3100"
+    add.addEventListener("click", e => {
+        fetch(host + "/api/user", {
+            method: "POST", headers: { "Content-type": "application/json" },
+            body: JSON.stringify({ username: newUser.value })
+        }).then(res => window.location.reload());
+    })
+
+    function loadUsers() {
+        fetch(host + "/api/userdata")
+            .then(r => r.json())
+            .then(data =>
+                data.forEach(item => userList.innerHTML +=
+                    `<option value="${item.jsontext
+                    }">${item.username
+                    }</option>`)
+            )
+    }
+    loadUsers()
+
+    userList.addEventListener("change", e => {
+        let jsonText = decodeURIComponent(userList.value);
+        let data = JSON.parse(jsonText);
+        console.log(data);
+        colorInput.value = data.color;
+        history = data;
+        localStorage.history = JSON.stringify(history);
+        redraw();
+    })
+
+    colorInput.addEventListener("change", e => {
+        history.color = colorInput.value;
+        save();
+    });
+
+    function save() {
+        fetch(host + "/api/userdata", {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json"
+            },
+            body: JSON.stringify({
+                username: userList.selectedOptions[0].innerHTML,
+                color: colorInput.value,
+                lines: history.lines
+            })
+        }).then(res => window.location.reload());
+    }
+
+    saveButton.addEventListener("click", save);
+</script>
