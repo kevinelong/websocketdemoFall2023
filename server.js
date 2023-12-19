@@ -1,6 +1,6 @@
 const WebSocket = require('ws');
 
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ port: 8080 }, 'echo-protocol');
 const clients = new Map();
 
 wss.on('connection', (ws) => {
@@ -20,7 +20,7 @@ wss.on('connection', (ws) => {
       [...clients.keys()].forEach((client) => {
         client.send(JSON.stringify(message));
       });
-    });  
+    });
 });
 
 wss.on("close", () => {
